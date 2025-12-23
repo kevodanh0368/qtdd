@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Điểm Danh Barcode - Modern Blue</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        :root {
+            --primary-color: #4361ee;
+            --success-color: #2ec4b6;
+            --danger-color: #e71d36;
+            --warning-color: #ff9f43;
+            /* ĐỔI MÀU NỀN Ở ĐÂY: Xanh nước biển đậm */
+            --bg-body: #0f172a;
+            --text-light: #f8fafc;
+            --text-muted-light: #94a3b8;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-light);
+            /* Chuyển màu chữ mặc định sang sáng */
+            margin: 0;
+        }
+
+        /* Sidebar - Vẫn giữ màu trắng để tạo tương phản */
+        .sidebar {
+            width: 80px;
+            background: #ffffff;
+            height: 100vh;
+            position: fixed;
+            border-right: none;
+            /* Bỏ viền để trông liền mạch hơn */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 0;
+            z-index: 1000;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .nav-icon {
+            font-size: 1.2rem;
+            color: #94a3b8;
+            margin: 15px 0;
+            cursor: pointer;
+            transition: 0.3s;
+            padding: 12px;
+            border-radius: 12px;
+            text-decoration: none;
+        }
+
+        .nav-icon.active,
+        .nav-icon:hover {
+            color: var(--primary-color);
+            background: #eff6ff;
+        }
+
+        /* Main Content wrapper */
+        .main-content {
+            margin-left: 80px;
+            padding: 30px;
+            min-height: 100vh;
+        }
+
+        /* CSS cho Header trên nền tối */
+        header h3 {
+            color: var(--text-light) !important;
+        }
+
+        header p.text-muted {
+            color: var(--text-muted-light) !important;
+        }
+
+        /* Stats Card - Giữ nền trắng, chữ tối bên trong */
+        .stat-card {
+            background: white;
+            color: #1e293b;
+            /* Màu chữ tối bên trong thẻ trắng */
+            border-radius: 20px;
+            padding: 25px;
+            border: none;
+            box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.2);
+            /* Bóng đổ sâu hơn trên nền tối */
+            height: 100%;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.3);
+        }
+
+        .icon-shape {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        /* Clock UI */
+        .clock-container {
+            background: rgba(255, 255, 255, 0.1);
+            /* Nền trong suốt nhẹ */
+            backdrop-filter: blur(10px);
+            /* Hiệu ứng mờ kính */
+            padding: 10px 20px;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        #digital-clock {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #60a5fa;
+            /* Màu xanh sáng hơn cho đồng hồ trên nền tối */
+            line-height: 1;
+        }
+
+        #digital-date {
+            font-size: 0.8rem;
+            color: var(--text-muted-light);
+            font-weight: 500;
+            margin-top: 4px;
+        }
+
+        /* Grade Block Items */
+        .block-item {
+            background: white;
+            color: #1e293b;
+            border-radius: 16px;
+            margin-bottom: 15px;
+            padding: 20px;
+            box-shadow: 0 5px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .progress {
+            height: 10px;
+            background-color: #f1f5f9;
+            border-radius: 10px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 250px;
+            width: 100%;
+        }
+
+        /* Tiêu đề khối lớp trên nền tối */
+        h5.fw-bold {
+            color: var(--text-light);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="sidebar">
+        <a href="#" class="nav-icon active"><i class="fas fa-th-large"></i></a>
+        <a href="#" class="nav-icon"><i class="fas fa-user-graduate"></i></a>
+        <a href="#" class="nav-icon"><i class="fas fa-calendar-alt"></i></a>
+        <a href="#" class="nav-icon"><i class="fas fa-chart-line"></i></a>
+        <div class="mt-auto">
+            <a href="#" class="nav-icon"><i class="fas fa-cog"></i></a>
+            <a href="#" class="nav-icon"><i class="fas fa-sign-out-alt"></i></a>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <header class="d-flex justify-content-between align-items-center mb-5">
+            <div>
+                <h3 class="fw-bold m-0">Bảng điều khiển</h3>
+                <p class="text-muted small mb-0">Hệ thống quản lý điểm danh Barcode trực tuyến</p>
+            </div>
+            <div class="d-flex align-items-center">
+                <div class="clock-container me-4 text-center">
+                    <div id="digital-clock">00:00:00</div>
+                    <div id="digital-date">Đang cập nhật...</div>
+                </div>
+                <div class="text-end me-3">
+                    <span class="badge bg-success-subtle text-success border border-success px-3 py-2 rounded-pill">●
+                        ONLINE</span>
+                </div>
+                <img src="https://i.pravatar.cc/45" class="rounded-circle border border-2 border-white shadow-sm"
+                    alt="Avatar">
+            </div>
+        </header>
+
+        <div class="row g-4 mb-4">
+            <div class="col-md-4">
+                <div class="stat-card">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted fw-semibold small uppercase">Tổng Sĩ Số</h6>
+                            <h2 class="fw-bold mt-2 mb-0">2.061</h2>
+                        </div>
+                        <div class="icon-shape bg-primary text-white"><i class="fas fa-users"></i></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-card border-bottom border-success border-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted fw-semibold small">Đã Điểm Danh</h6>
+                            <h2 class="fw-bold mt-2 mb-0 text-success">1.905</h2>
+                        </div>
+                        <div class="icon-shape bg-success text-white"><i class="fas fa-check-double"></i></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-card border-bottom border-danger border-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted fw-semibold small">Chưa Điểm Danh</h6>
+                            <h2 class="fw-bold mt-2 mb-0 text-danger">156</h2>
+                        </div>
+                        <div class="icon-shape bg-danger text-white"><i class="fas fa-user-slash"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-5">
+            <div class="col-lg-6">
+                <div class="stat-card">
+                    <h6 class="fw-bold mb-4 text-dark"><i class="fas fa-chart-pie me-2 text-primary"></i>Phân tích
+                        chuyên cần</h6>
+                    <div class="chart-container">
+                        <canvas id="attendanceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="stat-card" style="background: #fff9f0; border: 1px solid #ffe8cc;">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="icon-shape bg-warning text-white me-3 shadow-sm"><i
+                                        class="fas fa-clock"></i></div>
+                                <h6 class="mb-0 fw-bold">Đi học muộn</h6>
+                            </div>
+                            <h2 class="fw-bold mb-1">42</h2>
+                            <p class="text-muted small mb-0">Phát sinh từ đầu tiết 1</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="stat-card" style="background: #fef2f2; border: 1px solid #fee2e2;">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="icon-shape bg-danger text-white me-3 shadow-sm"><i
+                                        class="fas fa-tshirt"></i></div>
+                                <h6 class="mb-0 fw-bold">Sai đồng phục</h6>
+                            </div>
+                            <h2 class="fw-bold mb-1">12</h2>
+                            <p class="text-muted small mb-0">Hệ thống đã ghi nhận lỗi</p>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="stat-card bg-dark text-white">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-secondary small mb-1">Nhật ký hệ thống</h6>
+                                    <p class="mb-0 small">Phát hiện 2 lớp chưa hoàn thành báo cáo sĩ số đúng hạn.</p>
+                                </div>
+                                <button class="btn btn-outline-light btn-sm px-3">Kiểm tra</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h5 class="fw-bold mb-4">Sĩ số theo khối lớp</h5>
+
+        <div class="block-item border-start border-primary border-4">
+            <div class="row align-items-center">
+                <div class="col-md-4">
+                    <div class="d-flex align-items-center">
+                        <div class="fs-3 me-3">🎓</div>
+                        <div>
+                            <h6 class="mb-0 fw-bold">Khối 10</h6>
+                            <small class="text-muted">15 lớp trực thuộc</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="progress">
+                        <div class="progress-bar bg-primary shadow-sm" style="width: 93%"></div>
+                    </div>
+                </div>
+                <div class="col-md-4 text-end">
+                    <span class="badge bg-primary-subtle text-primary px-3 py-2 me-3">93% Hoàn thành</span>
+                    <span class="fw-bold">665 / 712</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="block-item border-start border-warning border-4">
+            <div class="row align-items-center">
+                <div class="col-md-4">
+                    <div class="d-flex align-items-center">
+                        <div class="fs-3 me-3">📚</div>
+                        <div>
+                            <h6 class="mb-0 fw-bold">Khối 11</h6>
+                            <small class="text-muted">15 lớp trực thuộc</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="progress">
+                        <div class="progress-bar bg-warning shadow-sm" style="width: 90%"></div>
+                    </div>
+                </div>
+                <div class="col-md-4 text-end">
+                    <span class="badge bg-warning-subtle text-warning px-3 py-2 me-3">90% Hoàn thành</span>
+                    <span class="fw-bold">603 / 670</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="block-item border-start border-success border-4">
+            <div class="row align-items-center">
+                <div class="col-md-4">
+                    <div class="d-flex align-items-center">
+                        <div class="fs-3 me-3">🏫</div>
+                        <div>
+                            <h6 class="mb-0 fw-bold">Khối 12</h6>
+                            <small class="text-muted">15 lớp trực thuộc</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="progress">
+                        <div class="progress-bar bg-success shadow-sm" style="width: 94%"></div>
+                    </div>
+                </div>
+                <div class="col-md-4 text-end">
+                    <span class="badge bg-success-subtle text-success px-3 py-2 me-3">94% Hoàn thành</span>
+                    <span class="fw-bold">637 / 679</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        // 1. ĐỒNG HỒ THỜI GIAN THỰC
+        function updateClock() {
+            const now = new Date();
+            const h = String(now.getHours()).padStart(2, '0');
+            const m = String(now.getMinutes()).padStart(2, '0');
+            const s = String(now.getSeconds()).padStart(2, '0');
+            const days = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+
+            document.getElementById('digital-clock').textContent = `${h}:${m}:${s}`;
+            document.getElementById('digital-date').textContent = `${days[now.getDay()]}, ${now.getDate()}/${now.getMonth() + 1}/${now.getFullYear()}`;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // 2. BIỂU ĐỒ TRÒN (Donut Chart)
+        const ctx = document.getElementById('attendanceChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Hiện diện', 'Vắng mặt', 'Đi muộn'],
+                datasets: [{
+                    data: [1905, 156, 42],
+                    backgroundColor: ['#4361ee', '#e71d36', '#ff9f43'],
+                    borderWidth: 0,
+                    hoverOffset: 15
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 25,
+                            font: { size: 12, family: 'Inter' }
+                        }
+                    }
+                },
+                cutout: '75%'
+            }
+        });
+    </script>
+</body>
+
+</html>
